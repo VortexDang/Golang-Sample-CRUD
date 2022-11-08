@@ -22,13 +22,28 @@ type Customer struct {
 
 var customerList []Customer
 
+func homePage(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "A brief overview of all the APIs: \n")
+	fmt.Fprintf(w, "\t Getting a single customer through a /customers/{id} path \n")
+	fmt.Fprintf(w, "\t Getting all customers through a the /customers path \n")
+	fmt.Fprintf(w, "\t Creating a customer through a /customers path \n")
+	fmt.Fprintf(w, "\t Updating a customer through a /customers/{id} path \n")
+	fmt.Fprintf(w, "\t Deleting a customer through a /customers/{id} path \n")
+}
+
 func getCustomers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	if len(customerList) == 0 {
+		w.WriteHeader(404)
+	}
 	json.NewEncoder(w).Encode(customerList)
 }
 
 func deleteCustomer(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	if len(customerList) == 0 {
+		w.WriteHeader(404)
+	}
 	params := mux.Vars(r)
 	for index, customer := range customerList {
 		if customer.ID == params["id"] {
@@ -41,6 +56,9 @@ func deleteCustomer(w http.ResponseWriter, r *http.Request) {
 
 func getCustomer(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	if len(customerList) == 0 {
+		w.WriteHeader(404)
+	}
 	params := mux.Vars(r)
 	for _, customer := range customerList {
 		if customer.ID == params["id"] {
@@ -52,14 +70,23 @@ func getCustomer(w http.ResponseWriter, r *http.Request) {
 
 func addCustomer(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	var customer Customer
-	_ = json.NewDecoder(r.Body).Decode((&customer))
-	customer.ID = strconv.Itoa((rand.Intn(10000)))
-	customerList = append(customerList, customer)
-	json.NewEncoder(w).Encode(customer)
+	if r.ContentLength == 0 {
+		w.WriteHeader(404)
+		fmt.Print("empty")
+	}
+	if r.ContentLength != 0 {
+		var customer Customer
+		json.NewDecoder(r.Body).Decode((&customer))
+		customer.ID = strconv.Itoa((rand.Intn(10000)))
+		customerList = append(customerList, customer)
+		json.NewEncoder(w).Encode(customer)
+	}
 }
 
 func updateCustomer(w http.ResponseWriter, r *http.Request) {
+	if len(customerList) == 0 {
+		w.WriteHeader(404)
+	}
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
 
@@ -67,7 +94,7 @@ func updateCustomer(w http.ResponseWriter, r *http.Request) {
 		if customer.ID == params["id"] {
 			customerList = append(customerList[:index], customerList[index+1:]...)
 			var customer Customer
-			_ = json.NewDecoder(r.Body).Decode(&customer)
+			json.NewDecoder(r.Body).Decode(&customer)
 			customer.ID = params["id"]
 			customerList = append(customerList, customer)
 			json.NewEncoder(w).Encode(customer)
@@ -79,12 +106,12 @@ func updateCustomer(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	r := mux.NewRouter()
-
 	customerList = append(customerList, Customer{ID: "1", Name: "Ben", Role: "Customer", Email: "ben.tran@jungtalens.com", Phone: "0123456789", Contacted: true})
 	customerList = append(customerList, Customer{ID: "2", Name: "Lock", Role: "Seller", Email: "lock.huynh@jungtalens.com", Phone: "0987654321", Contacted: false})
 	customerList = append(customerList, Customer{ID: "3", Name: "James", Role: "Manager", Email: "james.vo@jungtalens.com", Phone: "1234509876", Contacted: false})
 	customerList = append(customerList, Customer{ID: "4", Name: "Han", Role: "Customer", Email: "han.nguyen@jungtalens.com", Phone: "0192837465", Contacted: true})
 
+	r.HandleFunc("/", homePage)
 	r.HandleFunc("/customers", getCustomers).Methods("GET")
 	r.HandleFunc("/customers/{id}", getCustomer).Methods("GET")
 	r.HandleFunc("/customers", addCustomer).Methods("POST")
