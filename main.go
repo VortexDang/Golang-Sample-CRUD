@@ -22,18 +22,6 @@ type Customer struct {
 
 var customerList []Customer
 
-func homePage(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, `
-	<h1>Home page</h1>
-	<h2>A brief overview of all the APIs:<h2>
-	<p>Getting a single customer through a /customers/{id} path.</p>
-	<p>Getting all customers through a the /customers path.</p>
-	<p>Creating a customer through a /customers path.</p>
-	<p>Updating a customer through a /customers/{id} path.</p>
-	<p>Deleting a customer through a /customers/{id} path.</p>
-	`)
-}
-
 func getCustomers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if len(customerList) == 0 {
@@ -107,6 +95,14 @@ func updateCustomer(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func serveFiles(w http.ResponseWriter, r *http.Request) {
+	p := "." + r.URL.Path
+	if p == "./" {
+		p = "./index.html"
+	}
+	http.ServeFile(w, r, p)
+}
+
 func main() {
 	r := mux.NewRouter()
 	customerList = append(customerList, Customer{ID: "1", Name: "Ben", Role: "Customer", Email: "ben.tran@jungtalens.com", Phone: "0123456789", Contacted: true})
@@ -114,7 +110,8 @@ func main() {
 	customerList = append(customerList, Customer{ID: "3", Name: "James", Role: "Manager", Email: "james.vo@jungtalens.com", Phone: "1234509876", Contacted: false})
 	customerList = append(customerList, Customer{ID: "4", Name: "Han", Role: "Customer", Email: "han.nguyen@jungtalens.com", Phone: "0192837465", Contacted: true})
 
-	r.HandleFunc("/", homePage)
+	// r.HandleFunc("/", homePage)
+	r.HandleFunc("/", serveFiles)
 	r.HandleFunc("/customers", getCustomers).Methods("GET")
 	r.HandleFunc("/customers/{id}", getCustomer).Methods("GET")
 	r.HandleFunc("/customers", addCustomer).Methods("POST")
@@ -123,5 +120,4 @@ func main() {
 
 	fmt.Printf("Starting server at port 8000\n")
 	log.Fatal(http.ListenAndServe(":8000", r))
-
 }
