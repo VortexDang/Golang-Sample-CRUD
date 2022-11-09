@@ -20,19 +20,18 @@ type Customer struct {
 	Contacted bool   `json:"contacted"`
 }
 
-type HomePageResponse struct {
-	Description string `json:"description"`
-	Path        string `json:"path"`
-	Method      string `json:"method"`
-}
-
 var customerList []Customer
 
-var homePageResponse []HomePageResponse
-
 func homePage(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(homePageResponse)
+	fmt.Fprintf(w, `
+	<h1>Home page</h1>
+	<h2>A brief overview of all the APIs:<h2>
+	<p>Getting a single customer through a /customers/{id} path.</p>
+	<p>Getting all customers through a the /customers path.</p>
+	<p>Creating a customer through a /customers path.</p>
+	<p>Updating a customer through a /customers/{id} path.</p>
+	<p>Deleting a customer through a /customers/{id} path.</p>
+	`)
 }
 
 func getCustomers(w http.ResponseWriter, r *http.Request) {
@@ -115,12 +114,6 @@ func main() {
 	customerList = append(customerList, Customer{ID: "3", Name: "James", Role: "Manager", Email: "james.vo@jungtalens.com", Phone: "1234509876", Contacted: false})
 	customerList = append(customerList, Customer{ID: "4", Name: "Han", Role: "Customer", Email: "han.nguyen@jungtalens.com", Phone: "0192837465", Contacted: true})
 
-	homePageResponse = append(homePageResponse, HomePageResponse{Description: "Getting a single customer", Path: "/customers/{id}", Method: "GET"})
-	homePageResponse = append(homePageResponse, HomePageResponse{Description: "Getting all customers", Path: "/customers", Method: "GET"})
-	homePageResponse = append(homePageResponse, HomePageResponse{Description: "Creating a customer", Path: "/customers", Method: "POST"})
-	homePageResponse = append(homePageResponse, HomePageResponse{Description: " Updating a customer", Path: "/customers/{id}", Method: "PUT"})
-	homePageResponse = append(homePageResponse, HomePageResponse{Description: " Deleting a customer", Path: "/customers/{id}", Method: "DELETE"})
-
 	r.HandleFunc("/", homePage)
 	r.HandleFunc("/customers", getCustomers).Methods("GET")
 	r.HandleFunc("/customers/{id}", getCustomer).Methods("GET")
@@ -130,4 +123,5 @@ func main() {
 
 	fmt.Printf("Starting server at port 8000\n")
 	log.Fatal(http.ListenAndServe(":8000", r))
+
 }
